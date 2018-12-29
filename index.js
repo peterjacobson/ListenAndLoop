@@ -24,6 +24,7 @@ function streamingMicRecognize() {
       encoding: encoding,
       sampleRateHertz: sampleRateHertz,
       languageCode: languageCode,
+      enableAutomaticPunctuation: true,
     },
     interimResults: false, // If you want interim results, set this to true
   };
@@ -32,7 +33,10 @@ function streamingMicRecognize() {
   const recognizeStream = client
     .streamingRecognize(request)
     .on('error', console.error)
-    .on('data', recieveTranslation);
+    .on('data', function (data) {
+      record.stop()
+      recieveTranslation(data)
+    });
 
   // Start recording and send the microphone input to the Speech API
   record
@@ -53,33 +57,36 @@ function streamingMicRecognize() {
 
 function recieveTranslation (data) {
   consoleLogTranscript(data)
-  formResponse(data)
+  formResponse(data.results[0].alternatives[0].transcript)
 }
 
 function consoleLogTranscript (data) {
   process.stdout.write(
     data.results[0] && data.results[0].alternatives[0]
-      ? `Transcription: ${data.results[0].alternatives[0].transcript}\n`
+      ? `WHAT LOOPY HEARS:\n${data.results[0].alternatives[0].transcript}\n`
       : `\n\nReached transcription time limit, press Ctrl+C\n`
   )
 }
 
-
-
-function formResponse (data) {
-
+function formResponse (transcript) {
+  console.log("WHAT LOOPY SAYS:");
+  var initialBridge = transcript.match('feel')
+    ? "I hear you're feeling "
+    : "I hear you say "
   var response =
-    "I hear that " +
-    data.results[data.results.length-1].alternatives[0].transcript
+    initialBridge
+    + transcript
       .split(/(feel\w*)/).pop()
-      .replace(/my/ig, "your")
-      .replace(/I/ig, "you")
-      .replace(/me/ig, "you")
-      .replace(/I am/ig, "you are")
-      .replace(/I'm/ig, "you're")
-      .replace(/Loopy/ig, "")
+      .replace(/\bI am\b/ig, "you are")
+      .replace(/\bI'm\b/ig, "you are")
+      .replace(/\bmy\b/ig, "your")
+      .replace(/\bI\b/ig, "you")
+      .replace(/\bme\b/ig, "you")
+      .replace(/\bLoopy\b/ig, "")
+      .replace(/\bthanks\b/ig, "an absolute pleasure my friend")
   console.log(response);
-  say.speak(response, 'Alex', 1.0)
+  console.log("");
+  say.speak(response, 'Veena', 1.0, streamingMicRecognize)
 }
 
 
