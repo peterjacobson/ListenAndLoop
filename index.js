@@ -1,11 +1,43 @@
 const say = require('say')
+const language = require('@google-cloud/language');
+const util = require('util')
+
+function analyseTranscription(transcript, question) {
+  // Instantiates a client
+  const client = new language.LanguageServiceClient();
+
+  const document = {
+    content: transcript,
+    type: 'PLAIN_TEXT',
+  };
+
+  // Detects the sentiment of the text
+  client
+    .analyzeSentiment({document: document})
+    .then(results => {
+      const sentiment = results[0].documentSentiment;
+      console.log(util.inspect(results, false, null, true))
+      console.log(util.inspect(results[0].sentences[0].text.content, false, null, true))
+      console.log(JSON.stringify(results, null, 4));
+      console.log(JSON.stringify(results[0].sentences[0].text.content, null, 4));
+      // console.log(`Text: ${transcript}`);
+      // console.log(`Sentiment score: ${sentiment.score}`);
+      // console.log(`Sentiment magnitude: ${sentiment.magnitude}`);
+      // console.log(`analysis: ${sentiment}`);
+      receiveAnalysedTranscript(transcript, question, results)
+    })
+    .catch(err => {
+      console.error('ERROR:', err);
+    });
+}
+
 
 // streamingMicRecognize()
 
 askQuestionAndOpenMic("Hey, what's up?")
 
 function askQuestionAndOpenMic(question1, question2) {
-  say.speak(question1, 'Alex', 0.5, streamingMicRecognize(question2))
+  say.speak(question1, 'Alex', 1.5, streamingMicRecognize(question2))
 }
 
 function streamingMicRecognize(question) {
@@ -41,7 +73,7 @@ function streamingMicRecognize(question) {
     .on('error', console.error)
     .on('data', function (data) {
       record.stop()
-      recieveTranslation(data, question)
+      analyseTranscription(data, question)
     });
 
   // Start recording and send the microphone input to the Speech API
@@ -61,7 +93,7 @@ function streamingMicRecognize(question) {
 }
 
 
-function recieveTranslation (data, question) {
+function receiveAnalysedTranscript (data, question, analysis) {
   var transcription = data.results[0].alternatives[0].transcript
   if (transcription.match(/(you)/)) return abrasiveResponse(transcription)
   if (transcription.match(/(feel)/)) return feelingResponse(transcription)

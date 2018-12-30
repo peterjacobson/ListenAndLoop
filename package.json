@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/peterjacobson/ListenAndLoop#readme",
   "dependencies": {
+    "@google-cloud/language": "^2.0.0",
     "@google-cloud/speech": "^2.1.1",
     "node-record-lpcm16": "^0.3.1",
     "say": "^0.15.0"
