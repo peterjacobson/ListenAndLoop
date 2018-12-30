@@ -1,8 +1,14 @@
 const say = require('say')
 
-streamingMicRecognize()
+// streamingMicRecognize()
 
-function streamingMicRecognize() {
+askQuestionAndOpenMic("Hey, what's up?")
+
+function askQuestionAndOpenMic(question1, question2) {
+  say.speak(question1, 'Alex', 0.5, streamingMicRecognize(question2))
+}
+
+function streamingMicRecognize(question) {
   // [START speech_transcribe_streaming_mic]
   const record = require('node-record-lpcm16');
 
@@ -35,7 +41,7 @@ function streamingMicRecognize() {
     .on('error', console.error)
     .on('data', function (data) {
       record.stop()
-      recieveTranslation(data)
+      recieveTranslation(data, question)
     });
 
   // Start recording and send the microphone input to the Speech API
@@ -55,9 +61,13 @@ function streamingMicRecognize() {
 }
 
 
-function recieveTranslation (data) {
+function recieveTranslation (data, question) {
+  var transcription = data.results[0].alternatives[0].transcript
+  if (transcription.match(/(you)/)) return abrasiveResponse(transcription)
+  if (transcription.match(/(feel)/)) return feelingResponse(transcription)
+  if (transcription.match(/(I)(me)/)) return selfReflectiveResponse(transcription)
   consoleLogTranscript(data)
-  formResponse(data.results[0].alternatives[0].transcript)
+  return abrasiveResponse(data.results[0].alternatives[0].transcript)
 }
 
 function consoleLogTranscript (data) {
@@ -68,7 +78,23 @@ function consoleLogTranscript (data) {
   )
 }
 
-function formResponse (transcript) {
+function abrasiveResponse(transcript) {
+  var initialBridge = "No, you"
+  var end = "! "
+  var protagonise = ["Why don't you just calm down.", "How about a nice hot cup of shut the fuck up?", "Harden up, you shrimp", "Jeez, take a chill pill.", "Tell it to your mother", "Go stick your head in a drainpipe, pencilhead"]
+  var randomBait = protagonise[Math.floor(Math.random()*protagonise.length)]
+  var response =
+    initialBridge
+    + transcript
+      .split(/(you\w*)/).pop()
+    + end
+    + randomBait
+  console.log(response);
+  console.log("");
+  say.speak(response, 'Alex', 1.5, streamingMicRecognize)
+}
+
+function counselling (transcript) {
   console.log("WHAT LOOPY SAYS:");
   var initialBridge = transcript.match('feel')
     ? "I hear you're feeling "
@@ -86,7 +112,7 @@ function formResponse (transcript) {
       .replace(/\bthanks\b/ig, "an absolute pleasure my friend")
   console.log(response);
   console.log("");
-  say.speak(response, 'Veena', 1.0, streamingMicRecognize)
+  say.speak(response, 'Alex', 1.0, streamingMicRecognize)
 }
 
 
@@ -96,10 +122,8 @@ function formResponse (transcript) {
 
 // say.speak("What's up susie?", 'Alex', 0.5)
 // macVoices = ["Alex", "Fred", "Victoria", "Samantha", "Daniel", "Tessa", "Fiona", "Moira", "Veena", "Karen"]
-
+//
 // listVoices(macVoices)
-
-// say.speak("I'm sorry Dave, I cannot allow that", 'Alex', 1.0)
 //
 // function listVoices(voices) {
 //   if (voices.length == 0) return
@@ -108,7 +132,7 @@ function formResponse (transcript) {
 //   say.speak(
 //     "Hi, my name is " + voices[0],
 //     voices[0],
-//     2.0,
+//     1.0,
 //     () => {listVoices(voices.filter(shrinkVoiceArrayByOne))}
 //   )
 // }
